@@ -20,9 +20,10 @@ mongoose
   .connect(DB, {
     useNewUrlParser: true,
     useCreateIndex: true,
-    useFindAndModify: false
+    useFindAndModify: false,
+    useUnifiedTopology: true
   })
-  .then(() => console.log('DB connection successful!'));
+  .then(() => console.log('FuckYEahh !! Conected'));
 
 const port = process.env.PORT || 3000;
 const server = app.listen(port, () => {
