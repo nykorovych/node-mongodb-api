@@ -1,6 +1,6 @@
+const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
-const jwt = require('jsonwebtoken');
 
 exports.signup = catchAsync(async (req, res, next) => {
   console.log(req.body);
