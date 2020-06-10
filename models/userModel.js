@@ -20,7 +20,8 @@ const userSchema = mongoose.Schema({
   password: {
     type: String,
     require: [true, 'PUT password pepeg'],
-    minlength: 8
+    minlength: 8,
+    select: false
   },
   passwordConfirm: {
     type: String,
@@ -30,7 +31,12 @@ const userSchema = mongoose.Schema({
       validator: function(el) {
         return el === this.password;
       }
-    }
+    },
+    select: false
+  },
+  passwordChangedAt: {
+    type: Date
+    // require: true
   }
 });
 userSchema.pre('save', async function(next) {
@@ -42,6 +48,25 @@ userSchema.pre('save', async function(next) {
   this.passwordConfirm = undefined;
   next();
 });
+// AN INSTANCE METHOD
+userSchema.methods.correctPassword = async function(
+  candidatePassword,
+  userPassword
+) {
+  return await bcrypt.compare(candidatePassword, userPassword);
+};
+userSchema.methods.changesPasswordAfter = function(JWTTimeStamp) {
+  if (this.passwordChangedAt) {
+    const changedTimestamp = parseInt(
+      this.passwordChangedAt.getTime() / 1000,
+      10
+    );
+    console.log(changedTimestamp, JWTTimeStamp);
+
+    return JWTTimeStamp < changedTimestamp;
+  }
+  return false;
+};
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;
