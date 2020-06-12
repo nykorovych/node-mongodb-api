@@ -13,12 +13,13 @@ const signToken = id => {
 exports.signup = catchAsync(async (req, res, next) => {
   //   now ONLY way to register an admin is through Atlas or created a special route
   // this one no longer can register an admin
-  const newUser = await User.create({
-    name: req.body.name,
-    email: req.body.email,
-    password: req.body.password,
-    passwordConfirm: req.body.passwordConfirm
-  });
+  const newUser = await User.create(req.body);
+  // const newUser = await User.create({
+  //   name: req.body.name,
+  //   email: req.body.email,
+  //   password: req.body.password,
+  //   passwordConfirm: req.body.passwordConfirm
+  // });
   const token = signToken(newUser._id);
 
   res.status(201).json({
@@ -65,8 +66,25 @@ exports.protect = catchAsync(async (req, res, next) => {
   if (freshUser.changesPasswordAfter(decoded.iat)) {
     return next(new AppError('User recently changed password! Plrese ', 401));
   }
-  req.user = freshUser
+  req.user = freshUser;
   next();
 });
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return next(new AppError('No valid', 403));
+    }
+    next();
+  };
+};
+exports.forgotPassword = catchAsync(async (req, res, next) => {
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    return next(new AppError('no user with this email', 404));
+  }
+  const resetToken = user.createPasswordResetToken();
+  await user.save({ validateBeforeSave: false });
+});
+exports.resetPassword = (req, res, next) => {};
 
 // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjVlZTExZGQxMDZjZTc2NGVkN2Y3MTE0NyIsImlhdCI6MTU5MTgxMTUzNywiZXhwIjoxNTk5NTg3NTM3fQ.9gr4w6yq5W8bwS-Oq84zylEPqJtgThjElJdhtm33QP0
