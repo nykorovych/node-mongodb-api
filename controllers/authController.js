@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
+const sendEmail = require('../utils/email');
 
 const signToken = id => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -82,8 +83,31 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   if (!user) {
     return next(new AppError('no user with this email', 404));
   }
+  //
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
+
+  const resetURL = `${req.protocol}://${req.get(
+    'host'
+  )}/api/v1/users/resetPassword/${resetToken}`;
+  const message = `Forgot Pass pepeg ? to ${resetURL} u faking idiot`;
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Your token valid fo 10 min',
+      message
+    });
+    //
+    res.status(200).json({
+      status: 'yepCOCK',
+      message: 'Token send'
+    });
+  } catch (error) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+    return next(new AppError('Erorroro', 500));
+  }
 });
 exports.resetPassword = (req, res, next) => {};
 
