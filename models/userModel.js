@@ -38,7 +38,7 @@ const userSchema = mongoose.Schema({
     type: String,
     require: [true, 'PUT passwordConfirm pepeg'],
     validate: {
-      // works ONLY on .create() and .save()
+      // works ONLY on .create() and .save() the reason why we dont use findAndUpdate (mongoose doesnt keep the ....)
       validator: function(el) {
         return el === this.password;
       }
@@ -66,6 +66,7 @@ userSchema.methods.correctPassword = async function(
   candidatePassword,
   userPassword
 ) {
+  console.log('check');
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 userSchema.methods.changesPasswordAfter = function(JWTTimeStamp) {
@@ -77,10 +78,15 @@ userSchema.methods.changesPasswordAfter = function(JWTTimeStamp) {
     );
     console.log(changedTimestamp, JWTTimeStamp);
 
-    return JWTTimeStamp < changedTimestamp;
+    return JWTTimeStamp > changedTimestamp;
   }
   return false;
 };
+userSchema.pre('save', function(next) {
+  if (!this.isModified('password') || this.isNew) return next();
+  this.passwordChangedAt = Date.now() - 1000;
+  next();
+});
 userSchema.methods.createPasswordResetToken = function() {
   const resetToken = crypto.randomBytes(32).toString('hex');
 
@@ -89,7 +95,7 @@ userSchema.methods.createPasswordResetToken = function() {
     .update(resetToken)
     .digest('hex');
   console.log({ resetToken }, this.passwordResetToken);
-  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+  this.passwordResetExpires = Date.now() + 100 * 60 * 1000;
 
   return resetToken;
 };
