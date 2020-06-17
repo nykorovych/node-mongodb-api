@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 const User = require('./../models/userModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('../utils/appError');
@@ -5,6 +6,8 @@ const AppError = require('../utils/appError');
 const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
   Object.keys(obj).forEach(el => {
+    // console.log(el)
+
     if (allowedFields.includes(el)) newObj[el] = obj[el];
   });
   return newObj;
@@ -53,6 +56,14 @@ exports.updateUser = (req, res) => {
     message: 'This route is not yet defined!'
   });
 };
+
+exports.deleteMe = catchAsync(async (req, res, next) => {
+  await User.findByIdAndUpdate(req.user.id, { active: false });
+  res.status(204).json({
+    status: 'success',
+    data: null
+  });
+});
 exports.deleteUser = (req, res) => {
   res.status(500).json({
     status: 'error',

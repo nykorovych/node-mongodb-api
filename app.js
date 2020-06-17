@@ -1,5 +1,9 @@
 const express = require('express');
 const morgan = require('morgan');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanatize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
 
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -9,11 +13,22 @@ const globalErrorHandler = require('./controllers/errorController');
 const app = express();
 
 // 1) MIDDLEWARES
+app.use(helmet());
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
+const limit = rateLimit({
+  max: 200,
+  windowMs: 60 * 60 * 1000,
+  message: 'Change ur IP pepeg!'
+});
+app.use('/api', limit);
 
-app.use(express.json());
+app.use(express.json({ limit: '10kb' }));
+
+// DATA SANITIZATION
+app.use(mongoSanatize())
+
 app.use(express.static(`${__dirname}/public`));
 
 app.use((req, res, next) => {
